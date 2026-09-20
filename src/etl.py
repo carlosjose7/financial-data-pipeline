@@ -78,7 +78,7 @@ def _read_csv_flexivel(path: Path, delimiter: str, **kwargs) -> pd.DataFrame:
 
 
 def _norm_txt_upper(texto: str) -> str:
-    """Maiusculas sem acento para comparacao de regras (INGÁ->INGA, TRANSAÇÃO->TRANSACAO...)."""
+    """Maiusculas sem acento para comparacao de regras (ex.: TRANSAÇÃO->TRANSACAO)."""
     t = (texto or "").upper()
     for a, b in (("Á", "A"), ("Ã", "A"), ("Â", "A"), ("É", "E"), ("Ê", "E"),
                  ("Í", "I"), ("Ó", "O"), ("Ô", "O"), ("Õ", "O"), ("Ú", "U"), ("Ç", "C")):
@@ -87,14 +87,14 @@ def _norm_txt_upper(texto: str) -> str:
 
 
 def _eh_transferencia_interna(lanc: str, tran: str, banco: str) -> str:
-    """Marca SIM para operacoes entre contas da propria igreja (ignoradas pelo balancete).
+    """Marca SIM para operacoes entre contas da propria organizacao (ignoradas pelo balancete).
 
     Regras (ordem importa):
     1. ACAMPAMENTO nunca e transferencia interna (vai para ExcluirDoBalancete).
     2. 'ENTRE CONTAS' no lancamento (ex.: 'Transferência entre contas PagBank').
     3. 'RESERV*' / 'PATRIMONIO' (ex.: 'Dinheiro retirado Reserva', 'Valor reservado').
-    4. Nome da propria igreja no lancamento ('JARDIM ING*' cobre INGA/INGÁ,
-       qualquer tipo de transacao: Pix, Pagamento/Depósito recebido etc).
+    4. Nome da propria organizacao no lancamento (palavras-chave de IGREJA_KEYWORDS
+       no .env, qualquer tipo de transacao).
     5. Menções cruzadas entre bancos (Cora <-> PagSeguro <-> Mercado Pago).
     """
     l = _norm_txt_upper(lanc)
@@ -105,7 +105,7 @@ def _eh_transferencia_interna(lanc: str, tran: str, banco: str) -> str:
         return "SIM"
     if "RESERV" in l or "PATRIMONIO" in l:
         return "SIM"
-    if "JARDIM ING" in l:
+    if any(_norm_txt_upper(kw) in l for kw in config.IGREJA_KEYWORDS):
         return "SIM"
     b = (banco or "").upper()
     interna = (

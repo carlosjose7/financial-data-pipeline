@@ -28,15 +28,14 @@ def _load_dotenv(path: Path = REPO_ROOT / ".env") -> None:
 _load_dotenv()
 
 # --- Pastas de entrada / saida (configure via .env ou ambiente) ---
-DEFAULT_EXTRATOS = (
-    Path(r"C:\Users\Tesouraria\OneDrive - Igreja Batista em Jardim Ingá\Financeiro\Extratos")
-)
-DEFAULT_OUTPUT = (
-    Path(r"C:\Users\Tesouraria\OneDrive - Igreja Batista em Jardim Ingá\Financeiro\ETL")
-)
+# Padrao neutro: pastas locais do repo. Em producao, defina no .env
+# (arquivo local, fora do git) os caminhos reais, ex.:
+#   EXTRATOS_DIR=C:\...\Financeiro\Extratos
+DEFAULT_EXTRATOS = Path(os.getenv("EXTRATOS_DIR", str(REPO_ROOT / "dados" / "Extratos")))
+DEFAULT_OUTPUT = Path(os.getenv("OUTPUT_DIR", str(REPO_ROOT / "dados" / "ETL")))
 
-EXTRATOS_DIR = Path(os.getenv("EXTRATOS_DIR", str(DEFAULT_EXTRATOS)))
-OUTPUT_DIR = Path(os.getenv("OUTPUT_DIR", str(DEFAULT_OUTPUT)))
+EXTRATOS_DIR = DEFAULT_EXTRATOS
+OUTPUT_DIR = DEFAULT_OUTPUT
 
 # --- Subpastas por banco (dentro de EXTRATOS_DIR) ---
 DIR_CORA = EXTRATOS_DIR / os.getenv("DIR_CORA", "Cora")
@@ -51,6 +50,11 @@ OUTPUT_CALENDARIO = OUTPUT_DIR / os.getenv("OUTPUT_CALENDARIO", "dCalendario.csv
 # --- De-Para de nomes (Variacao -> Favorecido padrao). Editavel em Excel. ---
 # Padrao: mesma pasta do Consolidado.csv. Se nao existir, Favorecido = Lancamento.
 DEPARA_NOMES = Path(os.getenv("DEPARA_NOMES", str(OUTPUT_DIR / "DePara_Nomes.csv")))
+
+# --- Palavras-chave que identificam contas da propria organizacao ---
+# Ex.: IGREJA_KEYWORDS=NOME DA ORGANIZACAO,APELIDO. Vazio = regra de nome proprio desativada.
+# Defina no .env local (fora do git). Comparacao sem acento/maiusculas.
+IGREJA_KEYWORDS = [k.strip() for k in os.getenv("IGREJA_KEYWORDS", "").replace(";", ",").split(",") if k.strip()]
 
 # --- Flags de comportamento ---
 def _as_bool(value: str, default: bool) -> bool:
